@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 from scipy.special import gammaln, softmax
 import time
 
+# 加上这段兼容性判断
+if hasattr(np, 'trapezoid'):
+    integrate = np.trapezoid
+else:
+    integrate = np.trapz
 # 设置页面
 st.set_page_config(page_title="Cubic Model Convergence", layout="wide")
 st.title("Cubic Mean-Field Model: $W \\rightarrow Y_n \\rightarrow Y$")
@@ -18,16 +23,18 @@ start_btn = st.sidebar.button("▶ 开始动画 (自动变动 n)")
 def get_densities(n, alpha, w):
     # 极限 Y (红色)
     d_limit = np.exp(alpha * (w**2) / 2 - (w**4) / 12)
-    d_limit /= np.trapz(d_limit, w)
+    # 把 np.trapz 换成 integrate
+    d_limit /= integrate(d_limit, w) 
     
-    # 优化后的 Y_n (蓝色 - 你的 g(W) 公式)
+    # 优化后的 Y_n
     c0, c1, c2 = -4/(3*n**1.75), -alpha+1/n**0.5+alpha/n, 2/n**1.25-1/n**0.25
     c3 = 1/3 + alpha/n**0.5 + alpha**2/n + alpha**3/(3*n**1.5)
     c4 = 1/n**0.75 + 2*alpha/n**1.25 + alpha**2/n**1.75
     c5 = 1/n**1.5 + alpha/n**2
     v_w = c0*w + (c1/2)*w**2 + (c2/3)*w**3 + (c3/4)*w**4 + (c4/5)*w**5 + (c5/6)*w**6
     d_stein = np.exp(-v_w)
-    d_stein /= np.trapz(d_stein, w)
+    # 把 np.trapz 换成 integrate
+    d_stein /= integrate(d_stein, w) 
     return d_limit, d_stein
 
 def get_empirical(n, alpha):
